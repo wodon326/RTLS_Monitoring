@@ -4,13 +4,7 @@ import java.awt.Graphics;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.HashMap;
-import java.util.Queue;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -46,10 +40,6 @@ public class RTLS_Monitoring extends JFrame implements RTLS_Variable  {
 		Monitor_thread thread = new Monitor_thread(frame, socket);
 		thread.start();
 	}
-
-	/**
-	 * Create the frame.
-	 */
 	public RTLS_Monitoring() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);//monitoring 모두 종료
 		setBounds(100, 100, 500, 350);

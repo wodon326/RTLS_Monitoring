@@ -1,6 +1,5 @@
 import java.awt.Dimension;
 import java.awt.Graphics;
-
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -8,9 +7,10 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 public class Client_path extends JFrame {
-    JPanel contentPane_path;
-    ImageIcon icon;
+
     public Client_path(int[]X_Array,int[]Y_Array,int Line_Num,JLabel id) {
+        JPanel contentPane_path;
+        ImageIcon icon;
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); //Client_path 하나만 종료
         setBounds(100, 100, 500, 324);
         icon = new ImageIcon("RTLS map.png");

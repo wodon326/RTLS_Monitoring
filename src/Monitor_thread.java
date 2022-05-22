@@ -4,9 +4,6 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -21,20 +18,8 @@ public class Monitor_thread extends Thread implements RTLS_Variable {
     private ObjectOutputStream oos;
     private RTLS_Monitoring frame;
     private byte[] buf = new byte[512];
-    private JLabel Client_Label;
-    private int client_num = 0;
-    private byte[] byte_recode = new byte[10];
-    private byte[] byte_int = new byte[4];
-    private int line_num = 0;
-    private int xArray[] = null;
-    private int yArray[] = null;
-    private int id;
-    private int x;
-    private int y;
-    private byte state = (byte) 0x00;
-
-    private HashMap<Integer,Integer> client_Path_linenum = new HashMap<Integer,Integer>();
-    private HashMap<Integer, Queue<Pair>> client_Path_queue = new HashMap<Integer,Queue<Pair>>();
+    private HashMap<Integer, Integer> client_Path_linenum = new HashMap<Integer, Integer>();
+    private HashMap<Integer, Queue<Pair>> client_Path_queue = new HashMap<Integer, Queue<Pair>>();
     private JMenuItem MenuItem_Client_path;
 
 
@@ -54,9 +39,17 @@ public class Monitor_thread extends Thread implements RTLS_Variable {
 
     @Override
     public void run() {
+        JLabel Client_Label;
+        int client_num = 0;
+        byte[] byte_recode = new byte[10];
+        byte[] byte_int = new byte[4];
+        int xArray[] = null;
+        int yArray[] = null;
+        int id;
+        int x;
+        int y;
+        byte state = (byte) 0x00;
         while (true) {
-            client_num = 0;
-
             try {
                 buf = (byte[]) ois.readObject();
                 if (buf[0] == STX && buf[buf.length - 1] == ETX) {
@@ -73,8 +66,8 @@ public class Monitor_thread extends Thread implements RTLS_Variable {
                                     Client_Label.setForeground(Color.BLACK);
                                 }
                                 frame.Add_Client(ID, Client_Label);
-                                client_Path_queue.put(ID,new LinkedList<>());
-                                client_Path_linenum.put(ID,0);
+                                client_Path_queue.put(ID, new LinkedList<>());
+                                client_Path_linenum.put(ID, 0);
                                 // 클라이언트의 경로를 구하는 메뉴 추가
                                 MenuItem_Client_path = new JMenuItem(Integer.toString(ID));
                                 // 메뉴 클릭했을 때 데이터베이스에서 클라이언트의 위치를 가져오고 Client_path에 경로와 현재 위치와 현재 상태를 띄움
@@ -87,7 +80,7 @@ public class Monitor_thread extends Thread implements RTLS_Variable {
                                             buf_path[2] = (byte) ID;
                                             buf_path[3] = ETX;
                                             int path_id = Integer.parseInt(e.getActionCommand());
-                                            client_Path_linenum.put(ID,0);
+                                            client_Path_linenum.put(ID, 0);
                                             oos.writeObject(buf_path);
 
                                         } catch (IOException ex) {
@@ -103,7 +96,7 @@ public class Monitor_thread extends Thread implements RTLS_Variable {
                             int id_db;
                             int x_db;
                             int y_db;
-                            byte [] byte_recode_path = new byte[10];
+                            byte[] byte_recode_path = new byte[10];
                             System.arraycopy(buf, 2, byte_recode_path, 0, 10);
                             id_db = (int) byte_recode_path[0];
                             state = byte_recode_path[1];
@@ -111,10 +104,9 @@ public class Monitor_thread extends Thread implements RTLS_Variable {
                             x_db = ByteBuffer.wrap(byte_int).getInt();
                             System.arraycopy(byte_recode_path, 6, byte_int, 0, 4);
                             y_db = ByteBuffer.wrap(byte_int).getInt();
-                            System.out.println(id_db);
-                            client_Path_linenum.put(id_db,client_Path_linenum.get(id_db)+1);
+                            client_Path_linenum.put(id_db, client_Path_linenum.get(id_db) + 1);
                             client_Path_queue.get(id_db).add(new Pair(x_db, y_db));
-                            if(buf[12]==(byte)1){
+                            if (buf[12] == (byte) 1) {
                                 Queue<Pair> queue = client_Path_queue.get(id_db);
                                 // 데이터 개수만큼 배열을 생성하고 큐에 쌓인 데이터를 xArray, yArray에 집어넣음
                                 xArray = new int[client_Path_linenum.get(id_db)];
