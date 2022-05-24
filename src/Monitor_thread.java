@@ -12,27 +12,19 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 
 public class Monitor_thread extends Thread implements RTLS_Variable {
-    private InputStream is = null;
     private ObjectInputStream ois;
-    private OutputStream os;
     private ObjectOutputStream oos;
     private RTLS_Monitoring frame;
     private byte[] buf = new byte[512];
     private HashMap<Integer, Integer> client_Path_linenum = new HashMap<Integer, Integer>();
     private HashMap<Integer, Queue<Pair>> client_Path_queue = new HashMap<Integer, Queue<Pair>>();
     private JMenuItem MenuItem_Client_path;
+    private JMenuItem MenuItem_Client_rescue;
 
 
-    public Monitor_thread(RTLS_Monitoring frame, Socket socket) {
-        try {
-            os = socket.getOutputStream();
-            oos = new ObjectOutputStream(os);
-            is = socket.getInputStream();
-            ois = new ObjectInputStream(is);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+    public Monitor_thread(RTLS_Monitoring frame) {
+        oos = frame.getOos();
+        ois = frame.getOis();
         this.frame = frame;
         setName("monitor");
     }
@@ -54,6 +46,11 @@ public class Monitor_thread extends Thread implements RTLS_Variable {
                 buf = (byte[]) ois.readObject();
                 if (buf[0] == STX && buf[buf.length - 1] == ETX) {
                     switch (buf[1]) {
+                        case CMD_EXIT:
+                            int Id = (int) buf[2];
+                            System.out.println(Id + "가 나갔습니다.");
+                            frame.remove_Client(Id);
+                            break;
                         case CMD_LOGIN:
                             int ID = (int) buf[2];
                             if (!frame.containsKey(ID)) { // 기존에 모니터링되고있던 클라이언트가 아니면 JLabel을 만들어 hashmap에 넣고 클라이언트의 경로를 구하는
@@ -88,7 +85,38 @@ public class Monitor_thread extends Thread implements RTLS_Variable {
                                         }
                                     }
                                 });
+                                MenuItem_Client_rescue = new JMenuItem(Integer.toString(ID));
+                                MenuItem_Client_rescue.addActionListener(new ActionListener() {
+                                    public void actionPerformed(ActionEvent e) {
+                                        try {
+                                            byte[] buf_rescue;
+                                            byte[] data_RTLS = new byte[10];
+                                            byte[] int_byte = new byte[4];
+                                            JLabel Copy_Client = frame.Copy_Client(ID);
+                                            int x=Copy_Client.getX();
+                                            int y=Copy_Client.getY();
+
+                                            data_RTLS[0] = (byte)ID;
+                                            if(Copy_Client.getForeground()==Color.RED){
+                                                data_RTLS[1] = danger;
+                                            }
+                                            else {
+                                                data_RTLS[1] = normal;
+                                            }
+                                            int_byte = intToBytes(x);
+                                            System.arraycopy(int_byte, 0, data_RTLS, 2, 4);
+                                            int_byte = intToBytes(y);
+                                            System.arraycopy(int_byte, 0, data_RTLS, 6, 4);
+                                            buf_rescue = makepacket(CMD_RESCUE, data_RTLS);
+                                            oos.writeObject(buf_rescue);
+
+                                        } catch (IOException ex) {
+                                            throw new RuntimeException(ex);
+                                        }
+                                    }
+                                });
                                 frame.Client_Path_Menuadd(MenuItem_Client_path);
+                                frame.Client_Rescue_Menuadd(MenuItem_Client_rescue);
                                 frame.showMessage(ID);
                             }
                             break;
@@ -149,6 +177,26 @@ public class Monitor_thread extends Thread implements RTLS_Variable {
                                 }
                             }
                             break;
+                        case CMD_SOS:
+                            System.arraycopy(buf, 2, byte_recode, 0, 10);
+                            id = (int) byte_recode[0];
+                            state = byte_recode[1];
+                            System.arraycopy(byte_recode, 2, byte_int, 0, 4);
+                            x = ByteBuffer.wrap(byte_int).getInt();
+                            System.arraycopy(byte_recode, 6, byte_int, 0, 4);
+                            y = ByteBuffer.wrap(byte_int).getInt();
+                            frame.ShowSOS(id,state,x,y);
+                            break;
+                        case CMD_Client_Danger:
+                            System.arraycopy(buf, 2, byte_recode, 0, 10);
+                            id = (int) byte_recode[0];
+                            state = byte_recode[1];
+                            System.arraycopy(byte_recode, 2, byte_int, 0, 4);
+                            x = ByteBuffer.wrap(byte_int).getInt();
+                            System.arraycopy(byte_recode, 6, byte_int, 0, 4);
+                            y = ByteBuffer.wrap(byte_int).getInt();
+                            frame.Client_Danger(id,state,x,y);
+                            break;
                         default:
                             break;
                     }
@@ -161,5 +209,21 @@ public class Monitor_thread extends Thread implements RTLS_Variable {
                 e.printStackTrace();
             }
         }
+    }
+    // 패킷 만드는 함수
+    public static byte[] makepacket(byte cmd, byte[] data) {
+        byte[] pack = new byte[data.length + 3];
+        pack[0] = STX;
+        pack[1] = cmd;
+        System.arraycopy(data, 0, pack, 2, data.length);
+        pack[pack.length - 1] = ETX;
+        return pack;
+    }
+
+    // int -> byte[] 함수
+    public static byte[] intToBytes(final int i) {
+        ByteBuffer bytebuffer = ByteBuffer.allocate(4);
+        bytebuffer.putInt(i);
+        return bytebuffer.array();
     }
 }
