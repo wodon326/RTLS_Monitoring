@@ -127,6 +127,11 @@ public class RTLS_Monitoring extends JFrame implements RTLS_Variable  {
 		JOptionPane.showMessageDialog(null, message);
 	}
 	public void ShowSOS(int ID,int State, int X, int Y){
+		JLabel alerts = new JLabel("SOS");
+		alerts.setBounds(X, Y, 57, 15);
+		alerts.setForeground(Color.RED);
+		contentPane.add(alerts);
+		repaint();
 		String State_str;
 		if(State==danger)
 			State_str = "Danger";
